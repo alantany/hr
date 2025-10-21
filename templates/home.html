@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人事AI运营系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .tab:hover {
+            background: #e9ecef;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #4facfe;
+            border-bottom-color: #4facfe;
+        }
+        
+        .tab-icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 40px;
+            min-height: 600px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Tab 1: 文档对话样式 */
+        .chat-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            height: 700px;
+        }
+        
+        .chat-sidebar {
+            border-right: 2px solid #e1e5e9;
+            padding-right: 30px;
+        }
+        
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Tab 2: 批量筛选样式 */
+        .batch-container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+        }
+        
+        .upload-panel {
+            border-right: 2px solid #e1e5e9;
+            padding-right: 30px;
+        }
+        
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4facfe;
+        }
+        
+        .upload-area {
+            border: 2px dashed #4facfe;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #00f2fe;
+            background: #f0f8ff;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .resume-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .resume-item {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #4facfe;
+        }
+        
+        .resume-item-name {
+            font-size: 0.9em;
+            color: #333;
+        }
+        
+        .remove-btn {
+            color: #f5576c;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        
+        .query-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .query-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid #4facfe;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .candidate-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .match-badge {
+            background: #4caf50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .result-reason {
+            color: #666;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .highlights {
+            margin-top: 10px;
+        }
+        
+        .highlight-item {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin: 3px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .stats-bar {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 600;
+            color: #4facfe;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .quick-queries {
+            margin-top: 15px;
+        }
+        
+        .quick-query-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+            color: #555;
+        }
+        
+        .quick-query-btn:hover {
+            background: #f0f8ff;
+            border-color: #4facfe;
+            transform: translateX(5px);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        /* 福利政策查询面板样式 */
+        .query-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .query-panel h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .query-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .query-input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        .query-input-group input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .query-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .query-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .query-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .results-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 600px;
+            padding-right: 10px;
+        }
+        
+        .results-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .results-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .results-container::-webkit-scrollbar-thumb {
+            background: #4facfe;
+            border-radius: 4px;
+        }
+        
+        .results-container::-webkit-scrollbar-thumb:hover {
+            background: #3a8fd9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 人事AI运营系统</h1>
+            <p class="subtitle">智能简历分析与筛选，提升招聘效率 | 员工福利政策智能问答</p>
+        </div>
+        
+        <!-- Tab导航 -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('benefit')">
+                <span class="tab-icon">🎁</span>
+                员工福利政策
+            </div>
+            <div class="tab" onclick="switchTab('batch')">
+                <span class="tab-icon">🔍</span>
+                简历智能筛选
+            </div>
+        </div>
+        
+        <!-- Tab 1: 员工福利政策 -->
+        <div class="tab-content active" id="benefit-tab">
+            <div class="alert alert-info">
+                💡 <strong>员工福利政策查询：</strong>批量上传公司福利政策文档，员工可以使用自然语言提问，AI基于所有政策文档智能回答。
+            </div>
+            
+            <div class="batch-container">
+                <!-- 左侧上传面板 -->
+                <div class="upload-panel">
+                    <h3>📤 上传福利政策文档</h3>
+                    
+                    <div class="upload-area" id="benefitUploadArea">
+                        <div class="upload-icon">📄</div>
+                        <p>批量上传政策文档</p>
+                        <small>支持PDF、TXT格式</small>
+                    </div>
+                    
+                    <input type="file" id="benefitFileInput" accept=".pdf,.txt" multiple style="display: none;">
+                    <button id="benefitUploadBtn" class="upload-btn" disabled>上传到政策库</button>
+                    
+                    <!-- 政策文档库 -->
+                    <div id="benefitDocPool" style="display: none;">
+                        <div class="pool-header">
+                            <h4>📚 政策文档库 (<span id="benefitPoolCount">0</span>)</h4>
+                            <button class="clear-btn" onclick="clearBenefitPool()">清空</button>
+                        </div>
+                        <div id="benefitDocList" class="resume-list"></div>
+                    </div>
+                </div>
+                
+                <!-- 右侧查询面板 -->
+                <div class="query-panel">
+                    <h3>💬 政策咨询</h3>
+                    
+                    <!-- 快捷查询 -->
+                    <div id="benefitQuickQueries" class="quick-queries" style="display: none;">
+                        <button onclick="quickBenefitQuery('请假政策是什么？')" class="quick-btn">请假政策</button>
+                        <button onclick="quickBenefitQuery('年终奖如何计算？')" class="quick-btn">年终奖政策</button>
+                        <button onclick="quickBenefitQuery('五险一金缴纳比例')" class="quick-btn">五险一金</button>
+                        <button onclick="quickBenefitQuery('加班费如何计算？')" class="quick-btn">加班费</button>
+                        <button onclick="quickBenefitQuery('带薪年假有多少天？')" class="quick-btn">年假</button>
+                        <button onclick="quickBenefitQuery('员工体检政策')" class="quick-btn">体检政策</button>
+                    </div>
+                    
+                    <!-- 查询输入 -->
+                    <div class="query-input-group">
+                        <input type="text" id="benefitQueryInput" placeholder="例如：请假政策是什么？年终奖如何发放？" disabled>
+                        <button id="benefitQueryBtn" class="query-btn" disabled>🚀 查询</button>
+                    </div>
+                    
+                    <!-- 查询结果 -->
+                    <div id="benefitResultsContainer" class="results-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 2: 批量智能筛选 -->
+        <div class="tab-content" id="batch-tab">
+            <div class="alert alert-info">
+                💡 <strong>智能筛选模式：</strong>批量上传简历，系统静默处理。使用自然语言提问，AI智能筛选符合条件的候选人。
+            </div>
+            
+            <div class="batch-container">
+                <!-- 左侧上传面板 -->
+                <div class="upload-panel">
+                    <h2 class="section-title">📤 上传简历</h2>
+                    
+                    <div class="upload-area" id="batchUploadArea" onclick="document.getElementById('batchFileInput').click()">
+                        <div class="upload-icon">📄</div>
+                        <p>批量上传简历</p>
+                        <small>支持PDF、TXT格式</small>
+                        <input type="file" id="batchFileInput" class="file-input" multiple accept=".pdf,.txt">
+                    </div>
+                    
+                    <button class="btn" id="batchUploadBtn" onclick="batchUpload()" disabled>
+                        上传到简历池
+                    </button>
+                    
+                    <div id="resumePool" style="display: none;">
+                        <h3 class="section-title" style="margin-top: 30px;">📊 简历池</h3>
+                        <div class="stats-bar">
+                            <div class="stat-item">
+                                <div class="stat-value" id="poolCount">0</div>
+                                <div class="stat-label">总数</div>
+                            </div>
+                        </div>
+                        <div class="resume-list" id="resumeList"></div>
+                        <button class="btn btn-danger" onclick="clearPool()">清空简历池</button>
+                    </div>
+                    
+                    <div class="quick-queries" id="quickQueries" style="display: none;">
+                        <h3 class="section-title">⚡ 快捷查询</h3>
+                        <button class="quick-query-btn" onclick="quickQuery('帮我找到本科以上学历的候选人')">
+                            🎓 本科以上学历
+                        </button>
+                        <button class="quick-query-btn" onclick="quickQuery('帮我找到3年以上工作经验的候选人')">
+                            💼 3年以上经验
+                        </button>
+                        <button class="quick-query-btn" onclick="quickQuery('帮我找到会Python的候选人')">
+                            🐍 会Python
+                        </button>
+                        <button class="quick-query-btn" onclick="quickQuery('帮我找到有管理经验的候选人')">
+                            👔 有管理经验
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 右侧查询和结果面板 -->
+                <div class="results-panel">
+                    <h2 class="section-title">🔎 智能查询</h2>
+                    
+                    <textarea 
+                        id="queryInput" 
+                        class="query-input" 
+                        placeholder="输入您的筛选需求，例如：&#10;- 帮我找到本科以上学历的候选人&#10;- 找出有3年以上Python开发经验的人&#10;- 筛选出会React和Vue的前端工程师&#10;- 找到有管理经验且英语流利的候选人"
+                        disabled
+                    ></textarea>
+                    
+                    <button class="btn" id="queryBtn" onclick="queryResumes()" disabled>
+                        🚀 开始筛选
+                    </button>
+                    
+                    <div id="resultsContainer" style="margin-top: 30px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        let benefitSelectedFiles = [];
+        let uploadedCount = 0;
+        
+        // Tab切换
+        function switchTab(tabName) {
+            // 更新Tab状态
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab').classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // 加载对应Tab的数据
+            if (tabName === 'benefit') {
+                loadBenefitPoolStatus();
+            } else if (tabName === 'batch') {
+                loadPoolStatus();
+            }
+        }
+        
+        // ==================== 员工福利政策相关 ====================
+        const benefitFileInput = document.getElementById('benefitFileInput');
+        const benefitUploadArea = document.getElementById('benefitUploadArea');
+        const benefitUploadBtn = document.getElementById('benefitUploadBtn');
+        
+        benefitFileInput.addEventListener('change', (e) => {
+            benefitSelectedFiles = Array.from(e.target.files);
+            if (benefitSelectedFiles.length > 0) {
+                benefitUploadBtn.disabled = false;
+                benefitUploadArea.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <p>已选择 ${benefitSelectedFiles.length} 个文件</p>
+                    <small>点击重新选择</small>
+                `;
+            }
+        });
+        
+        benefitUploadArea.addEventListener('click', () => {
+            benefitFileInput.click();
+        });
+        
+        benefitUploadBtn.addEventListener('click', benefitBatchUpload);
+        
+        async function benefitBatchUpload() {
+            if (benefitSelectedFiles.length === 0) return;
+            
+            const totalFiles = benefitSelectedFiles.length;
+            benefitUploadBtn.disabled = true;
+            
+            let successCount = 0;
+            let failCount = 0;
+            let warningCount = 0;
+            
+            for (let i = 0; i < benefitSelectedFiles.length; i++) {
+                const file = benefitSelectedFiles[i];
+                
+                benefitUploadBtn.textContent = `上传中... (${i + 1}/${totalFiles})`;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const response = await fetch('/api/benefit_add_document', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                        if (result.warning) {
+                            warningCount++;
+                            console.warn(`${file.name}: ${result.warning}`);
+                        }
+                    } else {
+                        failCount++;
+                        console.error(`${file.name}: ${result.error}`);
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.error(`${file.name}:`, error);
+                }
+            }
+            
+            let message = `上传完成！成功: ${successCount}`;
+            if (warningCount > 0) {
+                message += `，部分解析异常: ${warningCount}`;
+            }
+            if (failCount > 0) {
+                message += `，失败: ${failCount}`;
+            }
+            showAlert(message, failCount > 0 ? 'error' : 'success');
+            
+            benefitSelectedFiles = [];
+            benefitFileInput.value = '';
+            benefitUploadBtn.disabled = true;
+            benefitUploadBtn.textContent = '上传到政策库';
+            benefitUploadArea.innerHTML = `
+                <div class="upload-icon">📄</div>
+                <p>批量上传政策文档</p>
+                <small>支持PDF、TXT格式</small>
+            `;
+            
+            await loadBenefitPoolStatus();
+        }
+        
+        async function loadBenefitPoolStatus() {
+            try {
+                const response = await fetch('/api/benefit_pool_status');
+                const result = await response.json();
+                if (result.total_count > 0) {
+                    document.getElementById('benefitDocPool').style.display = 'block';
+                    document.getElementById('benefitQuickQueries').style.display = 'block';
+                    document.getElementById('benefitQueryInput').disabled = false;
+                    document.getElementById('benefitQueryBtn').disabled = false;
+                    
+                    document.getElementById('benefitPoolCount').textContent = result.total_count;
+                    
+                    const docList = document.getElementById('benefitDocList');
+                    docList.innerHTML = result.documents.map(doc => {
+                        let status = '✅';
+                        let tooltip = '';
+                        
+                        if (doc.parse_error) {
+                            status = '⚠️';
+                            tooltip = ' title="文档解析失败"';
+                        }
+                        
+                        return `
+                            <div class="resume-item"${tooltip}>
+                                <span class="resume-item-name">${status} ${doc.filename}</span>
+                                <span class="remove-btn" onclick="removeBenefitDoc('${doc.doc_id}')">✕</span>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('benefitDocPool').style.display = 'none';
+                    document.getElementById('benefitQuickQueries').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('获取政策库状态失败:', error);
+                showAlert('获取政策库状态失败', 'error');
+            }
+        }
+        
+        async function clearBenefitPool() {
+            if (!confirm('确定要清空所有福利政策文档吗？')) return;
+            
+            try {
+                const response = await fetch('/api/benefit_clear_pool', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    await loadBenefitPoolStatus();
+                    document.getElementById('benefitResultsContainer').innerHTML = '';
+                }
+            } catch (error) {
+                showAlert('清空失败: ' + error.message, 'error');
+            }
+        }
+        
+        async function removeBenefitDoc(docId) {
+            try {
+                const response = await fetch('/api/benefit_remove_document', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ doc_id: docId })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    await loadBenefitPoolStatus();
+                }
+            } catch (error) {
+                showAlert('移除失败: ' + error.message, 'error');
+            }
+        }
+        
+        function quickBenefitQuery(query) {
+            document.getElementById('benefitQueryInput').value = query;
+            queryBenefits();
+        }
+        
+        document.getElementById('benefitQueryBtn').addEventListener('click', queryBenefits);
+        document.getElementById('benefitQueryInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                queryBenefits();
+            }
+        });
+        
+        async function queryBenefits() {
+            const query = document.getElementById('benefitQueryInput').value.trim();
+            if (!query) {
+                showAlert('请输入查询问题', 'error');
+                return;
+            }
+            
+            const queryBtn = document.getElementById('benefitQueryBtn');
+            const resultsContainer = document.getElementById('benefitResultsContainer');
+            
+            queryBtn.disabled = true;
+            queryBtn.textContent = '🔍 查询中...';
+            
+            resultsContainer.innerHTML = `
+                <div class="alert alert-info">
+                    正在分析政策文档，请稍候...
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/api/benefit_query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayBenefitResults(result);
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="alert alert-error">
+                            ${result.error || '查询失败'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-error">
+                        网络错误: ${error.message}
+                    </div>
+                `;
+            } finally {
+                queryBtn.disabled = false;
+                queryBtn.textContent = '🚀 查询';
+            }
+        }
+        
+        function displayBenefitResults(result) {
+            const resultsContainer = document.getElementById('benefitResultsContainer');
+            
+            let html = `
+                <div class="result-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 15px; font-size: 1.3em;">💬 ${result.query}</h3>
+                    <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 8px; line-height: 1.8; font-size: 1.05em;">
+                        ${result.answer}
+                    </div>
+                </div>
+            `;
+            
+            if (result.key_points && result.key_points.length > 0) {
+                html += `
+                    <div class="result-card">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">✨ 关键要点</h4>
+                        <div class="highlights">
+                            ${result.key_points.map(point => `<span class="highlight-item">${point}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (result.source_quote && result.source_quote.trim()) {
+                html += `
+                    <div class="result-card" style="background: #f8f9fa; border-left: 4px solid #667eea;">
+                        <h4 style="color: #666; margin-bottom: 10px;">📖 政策原文引用</h4>
+                        <p style="font-style: italic; color: #555; line-height: 1.8;">${result.source_quote}</p>
+                    </div>
+                `;
+            }
+            
+            if (result.relevant_documents && result.relevant_documents.length > 0) {
+                html += `
+                    <div class="result-card">
+                        <h4 style="color: #666; margin-bottom: 10px;">📄 相关文档</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            ${result.relevant_documents.map(doc => `
+                                <span style="background: #e9ecef; padding: 8px 15px; border-radius: 20px; font-size: 0.9em;">${doc}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultsContainer.innerHTML = html;
+        }
+        
+        // ==================== 简历筛选相关 ====================
+        
+        // 批量上传相关
+        const batchFileInput = document.getElementById('batchFileInput');
+        const batchUploadArea = document.getElementById('batchUploadArea');
+        const batchUploadBtn = document.getElementById('batchUploadBtn');
+        
+        batchFileInput.addEventListener('change', (e) => {
+            selectedFiles = Array.from(e.target.files);
+            if (selectedFiles.length > 0) {
+                batchUploadBtn.disabled = false;
+                batchUploadArea.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <p>已选择 ${selectedFiles.length} 个文件</p>
+                    <small>点击重新选择</small>
+                `;
+            }
+        });
+        
+        // 拖拽上传
+        batchUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            batchUploadArea.style.borderColor = '#00f2fe';
+            batchUploadArea.style.background = '#e6f3ff';
+        });
+        
+        batchUploadArea.addEventListener('dragleave', () => {
+            batchUploadArea.style.borderColor = '#4facfe';
+            batchUploadArea.style.background = '#f8f9fa';
+        });
+        
+        batchUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            batchUploadArea.style.borderColor = '#4facfe';
+            batchUploadArea.style.background = '#f8f9fa';
+            
+            const files = Array.from(e.dataTransfer.files).filter(f => 
+                f.type === 'application/pdf' || f.type === 'text/plain'
+            );
+            if (files.length > 0) {
+                selectedFiles = files;
+                batchFileInput.files = e.dataTransfer.files;
+                batchUploadBtn.disabled = false;
+                batchUploadArea.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <p>已选择 ${files.length} 个文件</p>
+                    <small>点击重新选择</small>
+                `;
+            }
+        });
+        
+        async function batchUpload() {
+            if (selectedFiles.length === 0) return;
+            
+            const totalFiles = selectedFiles.length;
+            batchUploadBtn.disabled = true;
+            
+            let successCount = 0;
+            let failCount = 0;
+            let warningCount = 0;
+            
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                
+                // 显示进度
+                batchUploadBtn.textContent = `上传中... (${i + 1}/${totalFiles})`;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const response = await fetch('/api/batch_add_resume', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                        if (result.warning) {
+                            warningCount++;
+                            console.warn(`${file.name}: ${result.warning}`);
+                        }
+                    } else {
+                        failCount++;
+                        console.error(`${file.name}: ${result.error}`);
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.error(`${file.name}:`, error);
+                }
+            }
+            
+            // 显示结果
+            let message = `上传完成！成功: ${successCount}`;
+            if (warningCount > 0) {
+                message += `，部分解析异常: ${warningCount}`;
+            }
+            if (failCount > 0) {
+                message += `，失败: ${failCount}`;
+            }
+            showAlert(message, failCount > 0 ? 'error' : 'success');
+            
+            // 重置状态 - 确保恢复
+            selectedFiles = [];
+            batchFileInput.value = '';
+            batchUploadBtn.disabled = true;
+            batchUploadBtn.textContent = '上传到简历池';  // ← 关键：恢复按钮文字
+            batchUploadArea.innerHTML = `
+                <div class="upload-icon">📄</div>
+                <p>批量上传简历</p>
+                <small>支持PDF、TXT格式</small>
+            `;
+            
+            // 刷新简历池
+            await loadPoolStatus();
+        }
+        
+        async function loadPoolStatus() {
+            try {
+                const response = await fetch('/api/batch_pool_status');
+                const result = await response.json();
+                
+                if (result.total_count > 0) {
+                    document.getElementById('resumePool').style.display = 'block';
+                    document.getElementById('quickQueries').style.display = 'block';
+                    document.getElementById('queryInput').disabled = false;
+                    document.getElementById('queryBtn').disabled = false;
+                    
+                    document.getElementById('poolCount').textContent = result.total_count;
+                    
+                    const resumeList = document.getElementById('resumeList');
+                    resumeList.innerHTML = result.resumes.map(r => {
+                        // 简化状态判断：只关心PDF是否能提取文本
+                        const status = r.parse_error ? '⚠️' : '✅';
+                        const tooltip = r.parse_error ? ' title="PDF文本提取失败，无法进行智能查询"' : ' title="可用于智能查询"';
+                        
+                        return `
+                            <div class="resume-item"${tooltip}>
+                                <span class="resume-item-name">${status} ${r.filename}</span>
+                                <span class="remove-btn" onclick="removeResume('${r.doc_id}')">✕</span>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('resumePool').style.display = 'none';
+                    document.getElementById('quickQueries').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('加载简历池失败:', error);
+            }
+        }
+        
+        async function clearPool() {
+            if (!confirm('确定要清空所有简历吗？')) return;
+            
+            try {
+                const response = await fetch('/api/batch_clear_pool', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    document.getElementById('resumePool').style.display = 'none';
+                    document.getElementById('quickQueries').style.display = 'none';
+                    document.getElementById('queryInput').disabled = true;
+                    document.getElementById('queryBtn').disabled = true;
+                    document.getElementById('resultsContainer').innerHTML = '';
+                }
+            } catch (error) {
+                showAlert('清空失败: ' + error.message, 'error');
+            }
+        }
+        
+        async function removeResume(docId) {
+            try {
+                const response = await fetch('/api/batch_remove_resume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ doc_id: docId })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    await loadPoolStatus();
+                }
+            } catch (error) {
+                showAlert('移除失败: ' + error.message, 'error');
+            }
+        }
+        
+        function quickQuery(query) {
+            document.getElementById('queryInput').value = query;
+            queryResumes();
+        }
+        
+        async function queryResumes() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                showAlert('请输入查询条件', 'error');
+                return;
+            }
+            
+            const queryBtn = document.getElementById('queryBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            queryBtn.disabled = true;
+            queryBtn.textContent = '🔍 分析中...';
+            
+            resultsContainer.innerHTML = `
+                <div class="alert alert-info">
+                    正在分析简历池，请稍候...
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/api/batch_query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="alert alert-error">
+                            ${result.error || '查询失败'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-error">
+                        网络错误: ${error.message}
+                    </div>
+                `;
+            } finally {
+                queryBtn.disabled = false;
+                queryBtn.textContent = '🚀 开始筛选';
+            }
+        }
+        
+        function displayResults(result) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            if (result.match_count === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-info">
+                        😔 未找到符合条件的候选人
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="stat-value">${result.total_resumes}</div>
+                        <div class="stat-label">总简历数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${result.match_count}</div>
+                        <div class="stat-label">符合条件</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${Math.round(result.match_count/result.total_resumes*100)}%</div>
+                        <div class="stat-label">匹配率</div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-success">
+                    ✅ ${result.summary}
+                </div>
+            `;
+            
+            result.matched_resumes.forEach(resume => {
+                html += `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <div class="candidate-name">👤 ${resume.name}</div>
+                            <div class="match-badge">✓ 符合</div>
+                        </div>
+                        
+                        <div class="result-reason">
+                            <strong>📝 符合原因：</strong>${resume.reason}
+                        </div>
+                        
+                        <div class="highlights">
+                            <strong>✨ 亮点：</strong>
+                            ${resume.highlights.map(h => `<span class="highlight-item">${h}</span>`).join('')}
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e1e5e9; font-size: 0.9em; color: #666;">
+                            📄 文件：${resume.filename} | 
+                            💼 经验：${resume.basic_info.experience_years}年 | 
+                            🔧 技能：${resume.basic_info.skills.slice(0, 5).join(', ')}
+                        </div>
+                        
+                        <button class="download-btn" onclick="downloadResume('${resume.doc_id}', '${resume.filename}')" style="
+                            margin-top: 12px;
+                            padding: 8px 16px;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)'" 
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            📥 下载简历
+                        </button>
+                    </div>
+                `;
+            });
+            
+            resultsContainer.innerHTML = html;
+        }
+        
+        function downloadResume(docId, filename) {
+            // 创建下载链接
+            const downloadUrl = `/api/download_resume/${docId}`;
+            window.open(downloadUrl, '_blank');
+            showAlert('开始下载: ' + filename, 'success');
+        }
+        
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.position = 'fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '9999';
+            alert.style.minWidth = '300px';
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+        
+        // 页面加载时检查当前tab的状态
+        loadBenefitPoolStatus(); // 默认加载福利政策库状态
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# 环境变量
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+resumes.db
+
+# 上传的文件
+uploads/
+*.pdf
+*.doc
+*.docx
+*.txt
+
+# 日志
+*.log
+nohup.out
+app.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db

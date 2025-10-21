@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简历文档对话系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .nav-links {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid white;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .nav-link:hover {
+            background: white;
+            color: #4facfe;
+        }
+        
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        h2 {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .upload-section {
+            margin-bottom: 20px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #4facfe;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #00f2fe;
+            background: #f0f8ff;
+        }
+        
+        .upload-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .document-info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4facfe;
+        }
+        
+        .document-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message.user {
+            align-items: flex-end;
+        }
+        
+        .message.assistant {
+            align-items: flex-start;
+        }
+        
+        .message-content {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        
+        .message.user .message-content {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .message.assistant .message-content {
+            background: white;
+            border: 1px solid #e1e5e9;
+            color: #333;
+        }
+        
+        .message-role {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .btn-send {
+            padding: 12px 30px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .quick-questions {
+            margin-top: 15px;
+        }
+        
+        .quick-question-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+            color: #555;
+        }
+        
+        .quick-question-btn:hover {
+            background: #f0f8ff;
+            border-color: #4facfe;
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <div class="header">
+                <div class="nav-links">
+                    <a href="/" class="nav-link">🏠 返回首页</a>
+                </div>
+                <h1>📄 文档对话</h1>
+                <p>上传简历，智能问答</p>
+            </div>
+            
+            <!-- 上传区域 -->
+            <div class="upload-section">
+                <h2>上传简历</h2>
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📄</div>
+                    <p>点击或拖拽PDF文件</p>
+                    <input type="file" id="fileInput" class="file-input" accept=".pdf">
+                </div>
+                <button class="btn" id="uploadBtn" onclick="uploadDocument()" disabled>上传并分析</button>
+            </div>
+            
+            <!-- 文档信息 -->
+            <div id="documentInfo" style="display: none;">
+                <h2>当前文档</h2>
+                <div class="document-info">
+                    <p><strong>📄 文件名：</strong><span id="docName"></span></p>
+                    <p><strong>🆔 文档ID：</strong><span id="docId"></span></p>
+                    <p><strong>📝 状态：</strong><span id="docStatus">已分析</span></p>
+                </div>
+                <button class="btn btn-secondary" onclick="clearConversation()">清除对话</button>
+            </div>
+            
+            <!-- 快捷问题 -->
+            <div class="quick-questions" id="quickQuestions" style="display: none;">
+                <h2>快捷问题</h2>
+                <button class="quick-question-btn" onclick="askQuestion('请总结这份简历的核心优势')">
+                    💡 总结核心优势
+                </button>
+                <button class="quick-question-btn" onclick="askQuestion('候选人的工作经验有哪些？')">
+                    💼 查看工作经验
+                </button>
+                <button class="quick-question-btn" onclick="askQuestion('候选人掌握哪些技能？')">
+                    🔧 查看技能列表
+                </button>
+                <button class="quick-question-btn" onclick="askQuestion('候选人的教育背景如何？')">
+                    🎓 查看教育背景
+                </button>
+                <button class="quick-question-btn" onclick="askQuestion('这位候选人适合什么样的职位？')">
+                    🎯 适合的职位
+                </button>
+            </div>
+        </div>
+        
+        <!-- 右侧对话区域 -->
+        <div class="main-panel">
+            <div class="header">
+                <h1>💬 智能对话</h1>
+                <p>基于简历内容与AI助手对话</p>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="alert alert-info">
+                        👋 欢迎使用简历文档对话系统！请先上传一份PDF格式的简历。
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        class="chat-input" 
+                        placeholder="输入您的问题..." 
+                        disabled
+                        onkeypress="handleKeyPress(event)"
+                    >
+                    <button class="btn-send" id="sendBtn" onclick="sendMessage()" disabled>
+                        发送 ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDocId = null;
+        let selectedFile = null;
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        // 文件选择
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                uploadBtn.disabled = false;
+                uploadArea.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <p>${selectedFile.name}</p>
+                    <small>点击重新选择</small>
+                `;
+            }
+        });
+        
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#00f2fe';
+            uploadArea.style.background = '#e6f3ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#4facfe';
+            uploadArea.style.background = '#f8f9fa';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#4facfe';
+            uploadArea.style.background = '#f8f9fa';
+            
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.type === 'application/pdf') {
+                    selectedFile = file;
+                    fileInput.files = e.dataTransfer.files;
+                    uploadBtn.disabled = false;
+                    uploadArea.innerHTML = `
+                        <div class="upload-icon">✅</div>
+                        <p>${selectedFile.name}</p>
+                        <small>点击重新选择</small>
+                    `;
+                } else {
+                    showAlert('请上传PDF格式的文件', 'error');
+                }
+            }
+        });
+        
+        async function uploadDocument() {
+            if (!selectedFile) {
+                showAlert('请选择文件', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '分析中...';
+            
+            addMessage('assistant', '正在分析您的简历，请稍候...', true);
+            
+            try {
+                const response = await fetch('/api/upload_document', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    currentDocId = result.doc_id;
+                    
+                    // 显示文档信息
+                    document.getElementById('docName').textContent = selectedFile.name;
+                    document.getElementById('docId').textContent = result.doc_id;
+                    document.getElementById('documentInfo').style.display = 'block';
+                    document.getElementById('quickQuestions').style.display = 'block';
+                    
+                    // 启用聊天输入
+                    chatInput.disabled = false;
+                    sendBtn.disabled = false;
+                    
+                    // 清空消息区并显示AI分析结果
+                    document.getElementById('chatMessages').innerHTML = '';
+                    addMessage('assistant', result.analysis);
+                    
+                    showAlert('文档上传并分析成功！', 'success');
+                } else {
+                    showAlert(result.error || '上传失败', 'error');
+                    addMessage('assistant', '抱歉，文档分析失败：' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                showAlert('网络错误：' + error.message, 'error');
+                addMessage('assistant', '抱歉，发生网络错误：' + error.message);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传并分析';
+            }
+        }
+        
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            if (!currentDocId) {
+                showAlert('请先上传文档', 'error');
+                return;
+            }
+            
+            // 显示用户消息
+            addMessage('user', message);
+            chatInput.value = '';
+            
+            // 禁用输入
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+            
+            // 显示加载状态
+            addMessage('assistant', '思考中...', true);
+            
+            try {
+                const response = await fetch('/api/chat_with_document', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        doc_id: currentDocId,
+                        message: message
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // 移除加载消息
+                const messages = document.getElementById('chatMessages');
+                messages.removeChild(messages.lastChild);
+                
+                if (response.ok && result.success) {
+                    addMessage('assistant', result.ai_response);
+                } else {
+                    addMessage('assistant', '抱歉，发生错误：' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                showAlert('网络错误：' + error.message, 'error');
+                addMessage('assistant', '抱歉，发生网络错误：' + error.message);
+            } finally {
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.focus();
+            }
+        }
+        
+        function askQuestion(question) {
+            chatInput.value = question;
+            sendMessage();
+        }
+        
+        function addMessage(role, content, isLoading = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const roleLabel = role === 'user' ? '👤 您' : '🤖 AI助手';
+            
+            messageDiv.innerHTML = `
+                <div class="message-role">${roleLabel}</div>
+                <div class="message-content">${isLoading ? '<div class="spinner"></div>' + content : content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function clearConversation() {
+            if (!currentDocId) return;
+            
+            if (confirm('确定要清除当前对话吗？')) {
+                fetch('/api/clear_conversation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ doc_id: currentDocId })
+                }).then(() => {
+                    document.getElementById('chatMessages').innerHTML = '';
+                    addMessage('assistant', '对话已清除。您可以重新开始提问。');
+                    showAlert('对话已清除', 'success');
+                });
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.position = 'fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '9999';
+            alert.style.minWidth = '300px';
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

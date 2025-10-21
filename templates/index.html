@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR简历筛选系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .nav-links {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid white;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .nav-link:hover {
+            background: white;
+            color: #4facfe;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 5px solid #4facfe;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .upload-area {
+            border: 3px dashed #4facfe;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #00f2fe;
+            background: #f0f8ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #00f2fe;
+            background: #e6f3ff;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            color: #4facfe;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .requirements-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        .requirements-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .results-container {
+            margin-top: 30px;
+        }
+        
+        .resume-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #4facfe;
+            transition: transform 0.3s ease;
+        }
+        
+        .resume-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .resume-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .resume-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .match-score {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .resume-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+        
+        .detail-icon {
+            margin-right: 8px;
+            color: #4facfe;
+        }
+        
+        .skills-container {
+            margin-top: 15px;
+        }
+        
+        .skill-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin: 3px;
+        }
+        
+        .matched-skill {
+            background: #c8e6c9;
+            color: #388e3c;
+        }
+        
+        .missing-skill {
+            background: #ffcdd2;
+            color: #d32f2f;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .file-list {
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .example-requirements {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .example-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .example-text {
+            color: #856404;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="nav-links">
+                <a href="/chat" class="nav-link">💬 文档对话</a>
+            </div>
+            <h1>HR简历筛选系统</h1>
+            <p>智能简历分析与筛选，提升招聘效率</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- 简历上传区域 -->
+            <div class="section">
+                <h2>📁 简历上传</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <h3>拖拽文件到此处或点击选择文件</h3>
+                    <p>支持 PDF、Word、TXT 格式，最大 16MB</p>
+                    <input type="file" id="fileInput" class="file-input" multiple accept=".pdf,.doc,.docx,.txt">
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">选择文件</button>
+                </div>
+                
+                <div id="fileList" class="file-list"></div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" id="uploadBtn" onclick="uploadFiles()" disabled>上传简历</button>
+                </div>
+            </div>
+            
+            <!-- 需求输入区域 -->
+            <div class="section">
+                <h2>🎯 筛选需求</h2>
+                
+                <div class="example-requirements">
+                    <div class="example-title">需求示例：</div>
+                    <div class="example-text">
+                        职位：Python后端工程师<br>
+                        技能要求：Python、Django、MySQL、Redis<br>
+                        工作经验：3年以上<br>
+                        学历要求：本科以上<br>
+                        优先：有微服务架构经验，熟悉Docker
+                    </div>
+                </div>
+                
+                <textarea 
+                    id="requirementsInput" 
+                    class="requirements-input" 
+                    placeholder="请输入筛选需求，例如：&#10;职位：前端工程师&#10;技能：React、JavaScript、HTML、CSS&#10;经验：2年以上&#10;学历：本科以上&#10;优先：有Vue.js经验"
+                ></textarea>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" id="screenBtn" onclick="screenResumes()">开始筛选</button>
+                </div>
+            </div>
+            
+            <!-- 结果展示区域 -->
+            <div class="section" id="resultsSection" style="display: none;">
+                <h2>📊 筛选结果</h2>
+                <div id="resultsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFiles = [];
+        
+        // 文件上传相关
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+        
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        });
+        
+        function handleFiles(files) {
+            uploadedFiles = files;
+            displayFileList();
+            uploadBtn.disabled = files.length === 0;
+        }
+        
+        function displayFileList() {
+            fileList.innerHTML = '';
+            uploadedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>📄 ${file.name} (${formatFileSize(file.size)})</span>
+                    <button class="btn" style="padding: 5px 10px; font-size: 0.8em;" onclick="removeFile(${index})">移除</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            displayFileList();
+            uploadBtn.disabled = uploadedFiles.length === 0;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        async function uploadFiles() {
+            if (uploadedFiles.length === 0) {
+                showAlert('请选择要上传的文件', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            uploadedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    uploadedFiles = [];
+                    fileList.innerHTML = '';
+                    fileInput.value = '';
+                } else {
+                    showAlert(result.error || '上传失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误：' + error.message, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传简历';
+            }
+        }
+        
+        async function screenResumes() {
+            const requirements = document.getElementById('requirementsInput').value.trim();
+            if (!requirements) {
+                showAlert('请输入筛选需求', 'error');
+                return;
+            }
+            
+            const screenBtn = document.getElementById('screenBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            screenBtn.disabled = true;
+            screenBtn.textContent = '筛选中...';
+            
+            // 显示加载状态
+            resultsSection.style.display = 'block';
+            resultsContainer.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在分析简历，请稍候...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/screen', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ requirements })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayResults(result);
+                } else {
+                    showAlert(result.error || '筛选失败', 'error');
+                    resultsSection.style.display = 'none';
+                }
+            } catch (error) {
+                showAlert('网络错误：' + error.message, 'error');
+                resultsSection.style.display = 'none';
+            } finally {
+                screenBtn.disabled = false;
+                screenBtn.textContent = '开始筛选';
+            }
+        }
+        
+        function displayResults(result) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            if (!result.results || result.results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-error">
+                        没有找到符合条件的简历
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="alert alert-success">
+                    找到 ${result.total_count} 份简历，按匹配度排序
+                </div>
+            `;
+            
+            result.results.forEach((resume, index) => {
+                const matchScore = resume.match_score;
+                const scoreColor = matchScore >= 80 ? '#4caf50' : matchScore >= 60 ? '#ff9800' : '#f44336';
+                
+                html += `
+                    <div class="resume-card">
+                        <div class="resume-header">
+                            <div class="resume-name">
+                                ${resume.analysis.name || resume.filename}
+                            </div>
+                            <div class="match-score" style="background: ${scoreColor}">
+                                匹配度: ${matchScore}%
+                            </div>
+                        </div>
+                        
+                        <div class="resume-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">👤</span>
+                                姓名: ${resume.analysis.name || '未识别'}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">💼</span>
+                                工作年限: ${resume.analysis.experience_years || 0}年
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📧</span>
+                                邮箱: ${resume.analysis.contact?.email || '未识别'}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📱</span>
+                                电话: ${resume.analysis.contact?.phone || '未识别'}
+                            </div>
+                        </div>
+                        
+                        <div class="skills-container">
+                            <strong>技能匹配情况：</strong><br>
+                            <div style="margin-top: 10px;">
+                                <strong style="color: #388e3c;">✓ 匹配技能：</strong>
+                                ${resume.match_details.skills_match.matched_skills.map(skill => 
+                                    `<span class="skill-tag matched-skill">${skill}</span>`
+                                ).join('')}
+                            </div>
+                            ${resume.match_details.skills_match.missing_skills.length > 0 ? `
+                                <div style="margin-top: 10px;">
+                                    <strong style="color: #d32f2f;">✗ 缺失技能：</strong>
+                                    ${resume.match_details.skills_match.missing_skills.map(skill => 
+                                        `<span class="skill-tag missing-skill">${skill}</span>`
+                                    ).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; font-size: 0.9em; color: #666;">
+                            <strong>详细评分：</strong>
+                            技能匹配 ${(resume.match_details.skills_match.score * 100).toFixed(1)}% | 
+                            经验匹配 ${(resume.match_details.experience_match.score * 100).toFixed(1)}% | 
+                            学历匹配 ${(resume.match_details.education_match.score * 100).toFixed(1)}%
+                        </div>
+                        
+                        ${resume.ai_insights && !resume.ai_insights.error ? `
+                            <div style="margin-top: 15px; padding: 15px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #4facfe;">
+                                <strong style="color: #4facfe;">🤖 AI分析洞察</strong>
+                                
+                                ${resume.ai_insights.summary ? `
+                                    <div style="margin-top: 10px;">
+                                        <strong>简历总结：</strong>
+                                        <p style="margin: 5px 0; color: #555;">${resume.ai_insights.summary || resume.analysis.summary || ''}</p>
+                                    </div>
+                                ` : ''}
+                                
+                                ${resume.ai_insights.strengths && resume.ai_insights.strengths.length > 0 ? `
+                                    <div style="margin-top: 10px;">
+                                        <strong style="color: #388e3c;">✓ 优势：</strong>
+                                        <ul style="margin: 5px 0; padding-left: 20px; color: #555;">
+                                            ${resume.ai_insights.strengths.map(s => `<li>${s}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                                
+                                ${resume.ai_insights.weaknesses && resume.ai_insights.weaknesses.length > 0 ? `
+                                    <div style="margin-top: 10px;">
+                                        <strong style="color: #d32f2f;">⚠ 需要关注：</strong>
+                                        <ul style="margin: 5px 0; padding-left: 20px; color: #555;">
+                                            ${resume.ai_insights.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                                
+                                ${resume.ai_insights.recommendations ? `
+                                    <div style="margin-top: 10px;">
+                                        <strong>HR建议：</strong>
+                                        <p style="margin: 5px 0; color: #555;">${resume.ai_insights.recommendations}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsContainer.innerHTML = html;
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const mainContent = document.querySelector('.main-content');
+            mainContent.insertBefore(alertDiv, mainContent.firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+
