@@ -88,10 +88,12 @@ def test_gemini():
     print_separator("🧪 测试 2: Google Gemini")
     
     api_key = os.getenv('GOOGLE_API_KEY')
+    base_url = os.getenv('GOOGLE_BASE_URL')
     model_name = os.getenv('GOOGLE_MODEL')
     
     print(f"📋 配置信息:")
     print(f"   API Key: {api_key[:20]}...{api_key[-10:] if api_key else 'None'}")
+    print(f"   Base URL: {base_url}")
     print(f"   Model: {model_name}")
     
     if not api_key:

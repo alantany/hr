@@ -30,6 +30,7 @@ class AIResumeAnalyzer:
             # 初始化 Gemini
             genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
             self.model = os.getenv('GOOGLE_MODEL', 'gemini-2.5-flash')
+            self.base_url = os.getenv('GOOGLE_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta')
             self.gemini_model = genai.GenerativeModel(self.model)
             self.client = None
         else:
