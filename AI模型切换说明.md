@@ -17,7 +17,7 @@ OPENAI_BASE_URL=https://openrouter.ai/api/v1
 OPENAI_MODEL=deepseek/deepseek-chat-v3.1:free
 
 # Google Gemini API 配置
-GOOGLE_API_KEY=***REMOVED***
+GOOGLE_API_KEY=your_google_api_key_here
 GOOGLE_MODEL=gemini-2.0-flash-exp
 
 # 默认使用的AI模型 (deepseek 或 gemini)
