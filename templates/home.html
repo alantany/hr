@@ -454,6 +454,15 @@
         <div class="header">
             <h1>🤖 人事AI运营系统</h1>
             <p class="subtitle">智能简历分析与筛选，提升招聘效率 | 员工福利政策智能问答</p>
+            
+            <!-- 模型选择器 -->
+            <div style="margin-top: 15px;">
+                <label style="font-size: 0.9em; margin-right: 10px;">AI模型：</label>
+                <select id="modelSelect" style="padding: 8px 15px; border-radius: 20px; border: 2px solid white; background: rgba(255,255,255,0.2); color: white; font-size: 0.9em; cursor: pointer;">
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="gemini">Google Gemini</option>
+                </select>
+            </div>
         </div>
         
         <!-- Tab导航 -->
@@ -801,13 +810,14 @@
             
             const queryBtn = document.getElementById('benefitQueryBtn');
             const resultsContainer = document.getElementById('benefitResultsContainer');
+            const modelType = document.getElementById('modelSelect').value;
             
             queryBtn.disabled = true;
             queryBtn.textContent = '🔍 查询中...';
             
             resultsContainer.innerHTML = `
                 <div class="alert alert-info">
-                    正在分析政策文档，请稍候...
+                    正在使用 ${modelType === 'gemini' ? 'Gemini' : 'DeepSeek'} 模型分析政策文档，请稍候...
                 </div>
             `;
             
@@ -815,7 +825,10 @@
                 const response = await fetch('/api/benefit_query', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query })
+                    body: JSON.stringify({ 
+                        query: query,
+                        model_type: modelType
+                    })
                 });
                 
                 const result = await response.json();
@@ -1094,13 +1107,14 @@
             
             const queryBtn = document.getElementById('queryBtn');
             const resultsContainer = document.getElementById('resultsContainer');
+            const modelType = document.getElementById('modelSelect').value;
             
             queryBtn.disabled = true;
             queryBtn.textContent = '🔍 分析中...';
             
             resultsContainer.innerHTML = `
                 <div class="alert alert-info">
-                    正在分析简历池，请稍候...
+                    正在使用 ${modelType === 'gemini' ? 'Gemini' : 'DeepSeek'} 模型分析简历池，请稍候...
                 </div>
             `;
             
@@ -1108,7 +1122,10 @@
                 const response = await fetch('/api/batch_query', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query })
+                    body: JSON.stringify({ 
+                        query: query,
+                        model_type: modelType
+                    })
                 });
                 
                 const result = await response.json();

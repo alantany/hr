@@ -10,6 +10,7 @@ import json
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 from openai import OpenAI
+import google.generativeai as genai
 from resume_analyzer import ResumeAnalyzer
 
 load_dotenv()
@@ -17,13 +18,28 @@ load_dotenv()
 class BatchResumeScreener:
     """批量简历筛选器"""
     
-    def __init__(self):
-        """初始化筛选器"""
-        self.client = OpenAI(
-            api_key=os.getenv('OPENAI_API_KEY'),
-            base_url=os.getenv('OPENAI_BASE_URL')
-        )
-        self.model = os.getenv('OPENAI_MODEL', 'deepseek/deepseek-chat')
+    def __init__(self, model_type=None):
+        """
+        初始化筛选器
+        
+        Args:
+            model_type: 模型类型，可选 'deepseek' 或 'gemini'
+        """
+        self.model_type = model_type or os.getenv('DEFAULT_AI_MODEL', 'deepseek')
+        
+        if self.model_type == 'gemini':
+            genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+            self.model = os.getenv('GOOGLE_MODEL', 'gemini-2.5-flash')
+            self.gemini_model = genai.GenerativeModel(self.model)
+            self.client = None
+        else:
+            self.client = OpenAI(
+                api_key=os.getenv('OPENAI_API_KEY'),
+                base_url=os.getenv('OPENAI_BASE_URL')
+            )
+            self.model = os.getenv('OPENAI_MODEL', 'deepseek/deepseek-chat')
+            self.gemini_model = None
+        
         self.resume_analyzer = ResumeAnalyzer()
         self.resume_pool = {}  # 存储简历池 {doc_id: {文件信息, 提取的文本}}
     
@@ -196,23 +212,34 @@ class BatchResumeScreener:
 只返回JSON，不要其他文字。"""
             
             # 调用AI分析
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "你是一个专业的HR筛选助手，擅长仔细阅读简历原文并根据要求筛选候选人。返回JSON格式结果。"
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.3,
-                max_tokens=4000  # 增加token限制，因为需要处理更多内容
-            )
-            
-            result_text = response.choices[0].message.content.strip()
+            if self.model_type == 'gemini':
+                # 使用 Gemini API
+                response = self.gemini_model.generate_content(
+                    f"你是一个专业的HR筛选助手，擅长仔细阅读简历原文并根据要求筛选候选人。返回JSON格式结果。\n\n{prompt}",
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.3,
+                        max_output_tokens=4000,
+                    )
+                )
+                result_text = response.text.strip()
+            else:
+                # 使用 DeepSeek API
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "你是一个专业的HR筛选助手，擅长仔细阅读简历原文并根据要求筛选候选人。返回JSON格式结果。"
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0.3,
+                    max_tokens=4000  # 增加token限制，因为需要处理更多内容
+                )
+                result_text = response.choices[0].message.content.strip()
             
             # 解析JSON
             if result_text.startswith('```'):

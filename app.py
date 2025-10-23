@@ -22,10 +22,12 @@ from benefit_screener import BenefitScreener
 # 加载环境变量
 load_dotenv()
 
-# 初始化代理
+# 初始化代理（在请求时动态创建，以支持模型切换）
 chat_agent = DocumentChatAgent()
-batch_screener = BatchResumeScreener()
-benefit_screener = BenefitScreener()
+
+# 全局简历池和福利池（跨模型共享）
+global_resume_pool = {}
+global_benefit_pool = {}
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hr_resume_system_2024'
@@ -98,10 +100,18 @@ def upload_files():
     if not files or files[0].filename == '':
         return jsonify({'error': '没有选择文件'}), 400
     
+    # 获取模型选择（从表单数据中获取）
+    model_type = request.form.get('model_type', os.getenv('DEFAULT_AI_MODEL', 'deepseek'))
+    
     uploaded_files = []
     analyzer = ResumeAnalyzer()
-    ai_analyzer = AIResumeAnalyzer()
-    use_ai = os.getenv('OPENAI_API_KEY') is not None
+    ai_analyzer = AIResumeAnalyzer(model_type=model_type)
+    
+    # 检查是否配置了AI
+    if model_type == 'gemini':
+        use_ai = os.getenv('GOOGLE_API_KEY') is not None
+    else:
+        use_ai = os.getenv('OPENAI_API_KEY') is not None
     
     for file in files:
         if file and allowed_file(file.filename):
@@ -161,6 +171,7 @@ def screen_resumes():
         return jsonify({'error': '请输入筛选需求'}), 400
     
     requirements = data['requirements']
+    model_type = data.get('model_type', os.getenv('DEFAULT_AI_MODEL', 'deepseek'))
     
     try:
         # 获取所有简历
@@ -175,8 +186,14 @@ def screen_resumes():
         
         # 执行筛选
         screener = ResumeScreener()
-        ai_analyzer = AIResumeAnalyzer()
-        use_ai = os.getenv('OPENAI_API_KEY') is not None
+        ai_analyzer = AIResumeAnalyzer(model_type=model_type)
+        
+        # 检查是否配置了AI
+        if model_type == 'gemini':
+            use_ai = os.getenv('GOOGLE_API_KEY') is not None
+        else:
+            use_ai = os.getenv('OPENAI_API_KEY') is not None
+        
         screening_results = []
         
         for resume in resumes:
@@ -393,8 +410,13 @@ def api_batch_add_resume():
         # 生成文档ID（移除扩展名）
         doc_id = os.path.splitext(safe_filename)[0]
         
-        # 添加到简历池（使用原始文件名显示，而不是safe_filename）
-        result = batch_screener.add_resume_to_pool(doc_id, file_path, original_filename)
+        # 使用临时screener来添加简历，然后将结果存入全局池
+        temp_screener = BatchResumeScreener()
+        result = temp_screener.add_resume_to_pool(doc_id, file_path, original_filename)
+        
+        # 将简历数据添加到全局池
+        if result['success'] and doc_id in temp_screener.resume_pool:
+            global_resume_pool[doc_id] = temp_screener.resume_pool[doc_id]
         
         return jsonify(result)
         
@@ -413,9 +435,15 @@ def api_batch_query():
         return jsonify({'success': False, 'error': '缺少查询参数'}), 400
     
     query = data['query']
+    model_type = data.get('model_type', os.getenv('DEFAULT_AI_MODEL', 'deepseek'))
     
     try:
-        result = batch_screener.query_resumes(query)
+        # 创建临时screener（使用指定的模型）
+        screener = BatchResumeScreener(model_type=model_type)
+        # 将全局池数据复制到临时screener
+        screener.resume_pool = global_resume_pool.copy()
+        
+        result = screener.query_resumes(query)
         return jsonify(result)
         
     except Exception as e:
@@ -425,8 +453,19 @@ def api_batch_query():
 def api_batch_pool_status():
     """API: 获取简历池状态"""
     try:
-        status = batch_screener.get_pool_status()
-        return jsonify(status)
+        # 使用全局池计算状态
+        resumes = []
+        for doc_id, data in global_resume_pool.items():
+            resumes.append({
+                'doc_id': doc_id,
+                'filename': data['filename'],
+                'parse_error': data.get('parse_error', False)
+            })
+        
+        return jsonify({
+            'total_count': len(global_resume_pool),
+            'resumes': resumes
+        })
     except Exception as e:
         return jsonify({'error': f'获取状态失败: {str(e)}'}), 500
 
@@ -434,8 +473,12 @@ def api_batch_pool_status():
 def api_batch_clear_pool():
     """API: 清空简历池"""
     try:
-        result = batch_screener.clear_pool()
-        return jsonify(result)
+        global global_resume_pool
+        global_resume_pool = {}
+        return jsonify({
+            'success': True,
+            'message': '简历池已清空'
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': f'清空失败: {str(e)}'}), 500
 
@@ -448,8 +491,15 @@ def api_batch_remove_resume():
         return jsonify({'success': False, 'error': '缺少文档ID'}), 400
     
     try:
-        result = batch_screener.remove_resume(data['doc_id'])
-        return jsonify(result)
+        doc_id = data['doc_id']
+        if doc_id in global_resume_pool:
+            del global_resume_pool[doc_id]
+            return jsonify({
+                'success': True,
+                'message': '简历已移除'
+            })
+        else:
+            return jsonify({'success': False, 'error': '简历不存在'}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': f'移除失败: {str(e)}'}), 500
 
@@ -457,11 +507,11 @@ def api_batch_remove_resume():
 def api_download_resume(doc_id):
     """API: 下载简历文件"""
     try:
-        # 从简历池获取文件信息
-        if doc_id not in batch_screener.resume_pool:
+        # 从全局简历池获取文件信息
+        if doc_id not in global_resume_pool:
             return jsonify({'error': '简历不存在'}), 404
         
-        resume_data = batch_screener.resume_pool[doc_id]
+        resume_data = global_resume_pool[doc_id]
         file_path = resume_data['file_path']
         original_filename = resume_data['filename']
         
@@ -515,8 +565,13 @@ def api_benefit_add_document():
         # 生成文档ID（移除扩展名）
         doc_id = os.path.splitext(safe_filename)[0]
         
-        # 添加到福利政策库
-        result = benefit_screener.add_document_to_pool(doc_id, file_path, original_filename)
+        # 使用临时screener来添加文档，然后将结果存入全局池
+        temp_screener = BenefitScreener()
+        result = temp_screener.add_document_to_pool(doc_id, file_path, original_filename)
+        
+        # 将文档数据添加到全局池
+        if result['success'] and doc_id in temp_screener.benefit_pool:
+            global_benefit_pool[doc_id] = temp_screener.benefit_pool[doc_id]
         
         return jsonify(result)
         
@@ -534,8 +589,15 @@ def api_benefit_query():
     if not data or 'query' not in data:
         return jsonify({'success': False, 'error': '缺少查询内容'}), 400
     
+    model_type = data.get('model_type', os.getenv('DEFAULT_AI_MODEL', 'deepseek'))
+    
     try:
-        result = benefit_screener.query_benefits(data['query'])
+        # 创建临时screener（使用指定的模型）
+        screener = BenefitScreener(model_type=model_type)
+        # 将全局池数据复制到临时screener
+        screener.benefit_pool = global_benefit_pool.copy()
+        
+        result = screener.query_benefits(data['query'])
         return jsonify(result)
     except Exception as e:
         return jsonify({'success': False, 'error': f'查询失败: {str(e)}'}), 500
@@ -544,8 +606,19 @@ def api_benefit_query():
 def api_benefit_pool_status():
     """API: 获取福利政策库状态"""
     try:
-        result = benefit_screener.get_pool_status()
-        return jsonify(result)
+        # 使用全局池计算状态
+        documents = []
+        for doc_id, data in global_benefit_pool.items():
+            documents.append({
+                'doc_id': doc_id,
+                'filename': data['filename'],
+                'parse_error': data.get('parse_error', False)
+            })
+        
+        return jsonify({
+            'total_count': len(global_benefit_pool),
+            'documents': documents
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': f'获取状态失败: {str(e)}'}), 500
 
@@ -553,8 +626,12 @@ def api_benefit_pool_status():
 def api_benefit_clear_pool():
     """API: 清空福利政策库"""
     try:
-        result = benefit_screener.clear_pool()
-        return jsonify(result)
+        global global_benefit_pool
+        global_benefit_pool = {}
+        return jsonify({
+            'success': True,
+            'message': '福利政策库已清空'
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': f'清空失败: {str(e)}'}), 500
 
@@ -567,8 +644,15 @@ def api_benefit_remove_document():
         return jsonify({'success': False, 'error': '缺少文档ID'}), 400
     
     try:
-        result = benefit_screener.remove_document(data['doc_id'])
-        return jsonify(result)
+        doc_id = data['doc_id']
+        if doc_id in global_benefit_pool:
+            del global_benefit_pool[doc_id]
+            return jsonify({
+                'success': True,
+                'message': '文档已移除'
+            })
+        else:
+            return jsonify({'success': False, 'error': '文档不存在'}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': f'移除失败: {str(e)}'}), 500
 
@@ -576,11 +660,11 @@ def api_benefit_remove_document():
 def api_download_benefit(doc_id):
     """API: 下载福利政策文档"""
     try:
-        # 从福利政策库获取文件信息
-        if doc_id not in benefit_screener.benefit_pool:
+        # 从全局福利政策池获取文件信息
+        if doc_id not in global_benefit_pool:
             return jsonify({'error': '文档不存在'}), 404
         
-        doc_data = benefit_screener.benefit_pool[doc_id]
+        doc_data = global_benefit_pool[doc_id]
         file_path = doc_data['file_path']
         original_filename = doc_data['filename']
         
@@ -602,5 +686,7 @@ def api_download_benefit(doc_id):
 
 if __name__ == '__main__':
     init_database()
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # 使用 use_reloader=True 启用自动重载
+    # use_debugger=True 启用调试器
+    app.run(debug=True, host='0.0.0.0', port=5001, use_reloader=True, use_debugger=True)
 
