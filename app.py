@@ -18,12 +18,13 @@ from ai_resume_analyzer import AIResumeAnalyzer
 from document_chat import DocumentChatAgent
 from batch_screener import BatchResumeScreener
 from benefit_screener import BenefitScreener
+from config_manager import get_ai_config_manager, get_available_models, reload_config
 
 # 加载环境变量
 load_dotenv()
 
 # 初始化代理（在请求时动态创建，以支持模型切换）
-chat_agent = DocumentChatAgent()
+# chat_agent 将在需要时动态创建
 
 # 全局简历池和福利池（跨模型共享）
 global_resume_pool = {}
@@ -79,6 +80,11 @@ def init_database():
 def index():
     """主页 - Tab化界面"""
     return render_template('home.html')
+
+@app.route('/test_model_display.html')
+def test_model_display():
+    """模型显示测试页面"""
+    return app.send_static_file('test_model_display.html')
 
 @app.route('/old')
 def old_index():
@@ -293,6 +299,34 @@ def get_resume_detail(resume_id):
         'analysis': analysis_result
     })
 
+@app.route('/api/available_models', methods=['GET'])
+def api_available_models():
+    """API: 获取可用的AI模型列表"""
+    try:
+        # 检查是否需要重新加载配置
+        force_reload = request.args.get('reload', 'false').lower() == 'true'
+        
+        if force_reload:
+            config_manager = reload_config()
+        else:
+            config_manager = get_ai_config_manager()
+            
+        models = config_manager.get_available_models()
+        default_model = config_manager.get_default_model()
+        
+        return jsonify({
+            'success': True,
+            'models': models,
+            'default_model': default_model,
+            'model_count': len(models),
+            'reloaded': force_reload
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'获取模型列表失败: {str(e)}'
+        }), 500
+
 @app.route('/api/upload_document', methods=['POST'])
 def api_upload_document():
     """API: 上传文档并分析"""
@@ -317,7 +351,8 @@ def api_upload_document():
         # 生成文档ID
         doc_id = unique_filename.replace('.pdf', '')
         
-        # 使用AI分析文档
+        # 使用AI分析文档（动态创建代理）
+        chat_agent = DocumentChatAgent()
         result = chat_agent.analyze_document(file_path, doc_id)
         
         if 'error' in result:
@@ -340,6 +375,8 @@ def api_chat_with_document():
     message = data['message']
     
     try:
+        # 动态创建代理
+        chat_agent = DocumentChatAgent()
         result = chat_agent.chat_with_document(doc_id, message)
         
         if 'error' in result:
@@ -359,6 +396,8 @@ def api_clear_conversation():
         return jsonify({'error': '缺少文档ID'}), 400
     
     doc_id = data['doc_id']
+    # 动态创建代理
+    chat_agent = DocumentChatAgent()
     success = chat_agent.clear_conversation(doc_id)
     
     return jsonify({
@@ -369,6 +408,8 @@ def api_clear_conversation():
 @app.route('/api/conversation_history/<doc_id>')
 def api_get_conversation_history(doc_id):
     """API: 获取对话历史"""
+    # 动态创建代理
+    chat_agent = DocumentChatAgent()
     history = chat_agent.get_conversation_history(doc_id)
     return jsonify({
         'doc_id': doc_id,
@@ -411,7 +452,9 @@ def api_batch_add_resume():
         doc_id = os.path.splitext(safe_filename)[0]
         
         # 使用临时screener来添加简历，然后将结果存入全局池
-        temp_screener = BatchResumeScreener()
+        # 获取模型类型（从请求中获取，默认为默认模型）
+        model_type = request.form.get('model_type', os.getenv('DEFAULT_AI_MODEL', 'deepseek'))
+        temp_screener = BatchResumeScreener(model_type=model_type)
         result = temp_screener.add_resume_to_pool(doc_id, file_path, original_filename)
         
         # 将简历数据添加到全局池
@@ -566,7 +609,9 @@ def api_benefit_add_document():
         doc_id = os.path.splitext(safe_filename)[0]
         
         # 使用临时screener来添加文档，然后将结果存入全局池
-        temp_screener = BenefitScreener()
+        # 获取模型类型（从请求中获取，默认为默认模型）
+        model_type = request.form.get('model_type', os.getenv('DEFAULT_AI_MODEL', 'deepseek'))
+        temp_screener = BenefitScreener(model_type=model_type)
         result = temp_screener.add_document_to_pool(doc_id, file_path, original_filename)
         
         # 将文档数据添加到全局池

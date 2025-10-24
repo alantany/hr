@@ -10,19 +10,36 @@ import base64
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 from openai import OpenAI
+from config_manager import get_model_config, is_model_available
 
 load_dotenv()
 
 class DocumentChatAgent:
     """文档对话代理 - 处理PDF并支持对话交互"""
     
-    def __init__(self):
+    def __init__(self, model_type=None):
         """初始化对话代理"""
+        self.model_type = model_type or os.getenv('DEFAULT_AI_MODEL', 'deepseek')
+        
+        # 检查模型是否可用
+        if not is_model_available(self.model_type):
+            raise ValueError(f"模型 '{self.model_type}' 不可用或配置不完整")
+        
+        # 获取模型配置
+        config = get_model_config(self.model_type)
+        if not config:
+            raise ValueError(f"无法获取模型 '{self.model_type}' 的配置")
+        
+        self.api_key = config['api_key']
+        self.base_url = config['base_url']
+        self.model = config['model']
+        self.display_name = config['display_name']
+        
+        # 初始化客户端
         self.client = OpenAI(
-            api_key=os.getenv('OPENAI_API_KEY'),
-            base_url=os.getenv('OPENAI_BASE_URL')
+            api_key=self.api_key,
+            base_url=self.base_url
         )
-        self.model = os.getenv('OPENAI_MODEL', 'deepseek/deepseek-chat-v3.1:free')
         self.conversation_history = {}  # 存储每个文档的对话历史
     
     def read_pdf_as_base64(self, pdf_path: str) -> str:

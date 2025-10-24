@@ -10,6 +10,7 @@ from typing import Dict, Any
 from dotenv import load_dotenv
 from openai import OpenAI
 import google.generativeai as genai
+from config_manager import get_model_config, is_model_available
 
 # 加载环境变量
 load_dotenv()
@@ -22,24 +23,36 @@ class AIResumeAnalyzer:
         初始化AI分析器
         
         Args:
-            model_type: 模型类型，可选 'deepseek' 或 'gemini'，默认从环境变量读取
+            model_type: 模型类型，从配置管理器动态获取
         """
         self.model_type = model_type or os.getenv('DEFAULT_AI_MODEL', 'deepseek')
         
+        # 检查模型是否可用
+        if not is_model_available(self.model_type):
+            raise ValueError(f"模型 '{self.model_type}' 不可用或配置不完整")
+        
+        # 获取模型配置
+        config = get_model_config(self.model_type)
+        if not config:
+            raise ValueError(f"无法获取模型 '{self.model_type}' 的配置")
+        
+        self.api_key = config['api_key']
+        self.base_url = config['base_url']
+        self.model = config['model']
+        self.display_name = config['display_name']
+        
+        # 根据模型类型初始化客户端
         if self.model_type == 'gemini':
             # 初始化 Gemini
-            genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
-            self.model = os.getenv('GOOGLE_MODEL', 'gemini-2.5-flash')
-            self.base_url = os.getenv('GOOGLE_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta')
+            genai.configure(api_key=self.api_key)
             self.gemini_model = genai.GenerativeModel(self.model)
             self.client = None
         else:
-            # 初始化 DeepSeek (OpenAI兼容)
+            # 初始化 OpenAI 兼容的客户端
             self.client = OpenAI(
-                api_key=os.getenv('OPENAI_API_KEY'),
-                base_url=os.getenv('OPENAI_BASE_URL')
+                api_key=self.api_key,
+                base_url=self.base_url
             )
-            self.model = os.getenv('OPENAI_MODEL', 'deepseek/deepseek-chat-v3.1:free')
             self.gemini_model = None
     
     def analyze_resume_with_ai(self, resume_text: str) -> Dict[str, Any]:

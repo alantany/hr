@@ -459,9 +459,11 @@
             <div style="margin-top: 15px;">
                 <label style="font-size: 0.9em; margin-right: 10px;">AI模型：</label>
                 <select id="modelSelect" style="padding: 8px 15px; border-radius: 20px; border: 2px solid white; background: rgba(255,255,255,0.2); color: white; font-size: 0.9em; cursor: pointer;">
-                    <option value="deepseek">DeepSeek</option>
-                    <option value="gemini">Google Gemini</option>
+                    <option value="">加载中...</option>
                 </select>
+                <button onclick="loadAvailableModels(true)" style="margin-left: 10px; padding: 8px 12px; border-radius: 20px; border: 2px solid white; background: rgba(255,255,255,0.2); color: white; font-size: 0.8em; cursor: pointer;" title="重新加载模型配置">
+                    🔄
+                </button>
             </div>
         </div>
         
@@ -610,6 +612,70 @@
         let benefitSelectedFiles = [];
         let uploadedCount = 0;
         
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAvailableModels();
+        });
+        
+        // 存储模型信息
+        let availableModels = [];
+        
+        // 加载可用的AI模型
+        async function loadAvailableModels(forceReload = false) {
+            try {
+                const url = forceReload ? '/api/available_models?reload=true' : '/api/available_models';
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 存储模型信息供后续使用
+                    availableModels = data.models;
+                    
+                    const modelSelect = document.getElementById('modelSelect');
+                    modelSelect.innerHTML = '';
+                    
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.value;
+                        option.textContent = model.display_name;
+                        if (model.value === data.default_model) {
+                            option.selected = true;
+                        }
+                        modelSelect.appendChild(option);
+                    });
+                    
+                    if (data.reloaded) {
+                        console.log(`🔄 已重新加载 ${data.model_count} 个AI模型`);
+                    } else {
+                        console.log(`✅ 已加载 ${data.model_count} 个AI模型`);
+                    }
+                } else {
+                    console.error('❌ 加载模型失败:', data.error);
+                    // 回退到默认选项
+                    const modelSelect = document.getElementById('modelSelect');
+                    modelSelect.innerHTML = `
+                        <option value="deepseek">DeepSeek</option>
+                        <option value="gemini">Google Gemini</option>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ 获取模型列表失败:', error);
+                // 回退到默认选项
+                const modelSelect = document.getElementById('modelSelect');
+                modelSelect.innerHTML = `
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="gemini">Google Gemini</option>
+                `;
+            }
+        }
+        
+        // 获取当前选择的模型信息
+        function getCurrentModelInfo() {
+            const modelType = document.getElementById('modelSelect').value;
+            const model = availableModels.find(m => m.value === modelType);
+            return model || { display_name: '未知模型', model_name: 'unknown' };
+        }
+        
         // Tab切换
         function switchTab(tabName) {
             // 更新Tab状态
@@ -667,6 +733,7 @@
                 
                 const formData = new FormData();
                 formData.append('file', file);
+                formData.append('model_type', document.getElementById('modelSelect').value);
                 
                 try {
                     const response = await fetch('/api/benefit_add_document', {
@@ -815,9 +882,12 @@
             queryBtn.disabled = true;
             queryBtn.textContent = '🔍 查询中...';
             
+            // 获取当前选择的模型信息
+            const currentModel = getCurrentModelInfo();
+            
             resultsContainer.innerHTML = `
                 <div class="alert alert-info">
-                    正在使用 ${modelType === 'gemini' ? 'Gemini' : 'DeepSeek'} 模型分析政策文档，请稍候...
+                    正在使用 ${currentModel.display_name} (${currentModel.model_name}) 分析政策文档，请稍候...
                 </div>
             `;
             
@@ -971,6 +1041,7 @@
                 
                 const formData = new FormData();
                 formData.append('file', file);
+                formData.append('model_type', document.getElementById('modelSelect').value);
                 
                 try {
                     const response = await fetch('/api/batch_add_resume', {
@@ -1112,9 +1183,12 @@
             queryBtn.disabled = true;
             queryBtn.textContent = '🔍 分析中...';
             
+            // 获取当前选择的模型信息
+            const currentModel = getCurrentModelInfo();
+            
             resultsContainer.innerHTML = `
                 <div class="alert alert-info">
-                    正在使用 ${modelType === 'gemini' ? 'Gemini' : 'DeepSeek'} 模型分析简历池，请稍候...
+                    正在使用 ${currentModel.display_name} (${currentModel.model_name}) 分析简历池，请稍候...
                 </div>
             `;
             

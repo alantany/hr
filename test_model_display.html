@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型显示测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .model-info { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 模型显示测试</h1>
+    
+    <div class="test-section">
+        <h3>模型选择器</h3>
+        <label>AI模型：</label>
+        <select id="modelSelect">
+            <option value="">加载中...</option>
+        </select>
+        <button onclick="loadAvailableModels(true)">🔄 重新加载</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>当前模型信息</h3>
+        <div id="currentModelInfo" class="model-info">请选择模型</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>模拟查询显示</h3>
+        <button onclick="simulateQuery()">🔍 模拟查询</button>
+        <div id="queryDisplay" style="margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        let availableModels = [];
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAvailableModels();
+        });
+        
+        // 加载可用的AI模型
+        async function loadAvailableModels(forceReload = false) {
+            try {
+                const url = forceReload ? '/api/available_models?reload=true' : '/api/available_models';
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    availableModels = data.models;
+                    
+                    const modelSelect = document.getElementById('modelSelect');
+                    modelSelect.innerHTML = '';
+                    
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.value;
+                        option.textContent = model.display_name;
+                        if (model.value === data.default_model) {
+                            option.selected = true;
+                        }
+                        modelSelect.appendChild(option);
+                    });
+                    
+                    // 更新当前模型信息显示
+                    updateCurrentModelInfo();
+                    
+                    console.log(`✅ 已加载 ${data.model_count} 个AI模型`);
+                }
+            } catch (error) {
+                console.error('❌ 获取模型列表失败:', error);
+            }
+        }
+        
+        // 获取当前选择的模型信息
+        function getCurrentModelInfo() {
+            const modelType = document.getElementById('modelSelect').value;
+            const model = availableModels.find(m => m.value === modelType);
+            return model || { display_name: '未知模型', model_name: 'unknown' };
+        }
+        
+        // 更新当前模型信息显示
+        function updateCurrentModelInfo() {
+            const currentModel = getCurrentModelInfo();
+            document.getElementById('currentModelInfo').innerHTML = `
+                <strong>显示名称:</strong> ${currentModel.display_name}<br>
+                <strong>模型名称:</strong> ${currentModel.model_name}<br>
+                <strong>标识符:</strong> ${document.getElementById('modelSelect').value || '未选择'}
+            `;
+        }
+        
+        // 模拟查询显示
+        function simulateQuery() {
+            const currentModel = getCurrentModelInfo();
+            document.getElementById('queryDisplay').innerHTML = `
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; border-left: 4px solid #2196f3;">
+                    <strong>🔍 正在使用 ${currentModel.display_name} (${currentModel.model_name}) 分析简历池，请稍候...</strong>
+                </div>
+            `;
+        }
+        
+        // 监听模型选择变化
+        document.getElementById('modelSelect').addEventListener('change', updateCurrentModelInfo);
+    </script>
+</body>
+</html>
